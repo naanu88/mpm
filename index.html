@@ -75,6 +75,7 @@
             <option>hard</option>
             <option>harder</option>
             <option>EXTREME</option>
+            <option>PhD</option>
           </select>
         </div>
         <div>
@@ -166,11 +167,12 @@ function choice(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 
 /* ========= Difficulty configs ========= */
 const DIFFS = {
-  easy:    { range: 10,  ops: 2,  steps: 1 },
-  medium:  { range: 30,  ops: 3,  steps: 2 },
-  hard:    { range: 80,  ops: 4,  steps: 2 },
-  harder:  { range: 200, ops: 5,  steps: 3 },
-  EXTREME: { range: 1000, ops: 6, steps: 4 }
+  easy:    { range: 10,   ops: 2,  steps: 1 },
+  medium:  { range: 30,   ops: 3,  steps: 2 },
+  hard:    { range: 80,   ops: 4,  steps: 2 },
+  harder:  { range: 200,  ops: 5,  steps: 3 },
+  EXTREME: { range: 1000, ops: 6,  steps: 4 },
+  PhD:     { range: 5000, ops: 8,  steps: 5 }
 };
 
 /* ========= Names and contexts ========= */
@@ -181,7 +183,10 @@ const contexts = {
   farm:     { items: "hay bales", people: "farmhands", place: "farm" },
   lab:      { items: "samples", people: "researchers", place: "lab" },
   class:    { items: "worksheets", people: "students", place: "classroom" },
-  warehouse:{ items: "crates", people: "workers", place: "warehouse" }
+  warehouse:{ items: "crates", people: "workers", place: "warehouse" },
+  kitchen:  { items: "ingredients", people: "chefs", place: "kitchen" },
+  library:  { items: "books", people: "librarians", place: "library" },
+  gym:      { items: "weights", people: "trainers", place: "gym" }
 };
 
 /* ========= Branch templates ========= */
@@ -233,12 +238,15 @@ const Branches = {
     },
     word: (rng, diff) => {
       const name = choice(rng, names);
-      const ctx = contexts.workshop;
-      const x = randInt(rng, 2, 9), y = randInt(rng, 2, 9);
+      const ctx = choice(rng, Object.values(contexts)); // No longer hardcoded
+      const x = randInt(rng, 2, 9); // items per hour
+      const y = randInt(rng, 5, 20); // starting items
+      const h = randInt(rng, 2, 5); // hours
+      const total = y + x * h;
       return {
-        text: `${name} is at a ${ctx.place} with ${x} ${ctx.items}. Each ${ctx.items.slice(0,-1)} needs ${y} minutes to cut. If total time is T minutes and T = ${y}x, solve for x in terms of T.`,
-        hint: `x is the number of items: T = ${y}x ⇒ x = T ÷ ${y}.`,
-        solution: `x = T ÷ ${y}.`
+        text: `${name} is at the ${ctx.place} which starts with ${y} ${ctx.items}. ${name} adds ${x} ${ctx.items} per hour. The total T is given by T = ${y} + ${x}h, where h is hours. How many hours has it been if the total is now ${total}?`,
+        hint: `Solve for h in ${total} = ${y} + ${x}h.`,
+        solution: `h = (${total} - ${y}) / ${x}.`
       };
     },
     solving: (rng, diff) => {
@@ -289,13 +297,14 @@ const Branches = {
       };
     },
     word: (rng, diff) => {
-      const ctx = contexts.workshop;
-      const logs = randInt(rng, 20, diff.range+50), people = randInt(rng, 2, 15);
+      const ctx = choice(rng, Object.values(contexts)); // No longer hardcoded
+      const numItems = randInt(rng, 20, diff.range+50);
+      const people = randInt(rng, 2, 15);
       const rate = randInt(rng, 1, 5);
       return {
-        text: `${choice(rng,names)} is at a ${ctx.place} with ${logs} ${ctx.items} and ${people} ${ctx.people}. Each person cuts ${rate} logs per hour. How many hours to finish?`,
-        hint: `Total rate = people × logs/hour.`,
-        solution: `Time = ${logs} ÷ (${people} × ${rate}).`
+        text: `${choice(rng,names)} is at a ${ctx.place} with ${numItems} ${ctx.items} and ${people} ${ctx.people}. Each person processes ${rate} ${ctx.items} per hour. How many hours to finish?`,
+        hint: `Total rate = people × ${ctx.items}/hour.`,
+        solution: `Time = ${numItems} ÷ (${people} × ${rate}).`
       };
     },
     solving: (rng, diff) => {
@@ -576,7 +585,7 @@ function render() {
 
   problemTextEl.textContent = payload.text;
   hintEl.textContent = "Hint: " + payload.hint;
-  solutionEl.textContent = "Solution sketch: " + payload.solution;
+  solutionEl.textContent = "Solution sketch: ".replace("Solution sketch: ","") + payload.solution;
 
   metaEl.innerHTML = "";
   const metaPieces = [
