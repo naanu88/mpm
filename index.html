@@ -554,6 +554,14 @@ const metaEl = document.getElementById("meta");
 const copyBtn = document.getElementById("copyBtn");
 const shareBtn = document.getElementById("shareBtn");
 
+// This flag tracks if the user has manually interacted with the seed input
+let userHasInteractedWithSeed = false;
+
+// Listen for user input on the seed box
+seedEl.addEventListener("input", () => {
+  userHasInteractedWithSeed = true;
+});
+
 function randomSeed() {
   // Use crypto if available; fallback to time-based
   const arr = new Uint32Array(4);
@@ -580,12 +588,22 @@ function render() {
   const style = styleMap[styleEl.value];
 
   let seedStr = seedEl.value.trim();
-  if (!seedStr) seedStr = randomSeed();
+
+  // --- MODIFIED SEED LOGIC ---
+  // If the user hasn't just typed in the seed box,
+  // OR if the seed box is empty, generate a new random seed.
+  // This makes the "Generate" button always create a new problem.
+  if (!userHasInteractedWithSeed || !seedStr) {
+    seedStr = randomSeed();
+  }
+  // If user *has* interacted and the box has text, we'll use their seed.
+  // --- END MODIFIED LOGIC ---
+
   const payload = genProblem({difficulty, branch, style, seedStr});
 
   problemTextEl.textContent = payload.text;
   hintEl.textContent = "Hint: " + payload.hint;
-  solutionEl.textContent = "Solution sketch: ".replace("Solution sketch: ","") + payload.solution;
+  solutionEl.textContent = "Solution sketch: " + payload.solution; // Fixed typo from original
 
   metaEl.innerHTML = "";
   const metaPieces = [
@@ -603,6 +621,8 @@ function render() {
 
   // Update seed field with the actual used seed
   seedEl.value = seedStr;
+  // ALWAYS reset the flag after rendering
+  userHasInteractedWithSeed = false;
 }
 
 generateBtn.addEventListener("click", render);
@@ -621,7 +641,8 @@ copyBtn.addEventListener("click", async () => {
 
 shareBtn.addEventListener("click", async () => {
   const url = new URL(location.href);
-  const seedVal = seedEl.value.trim() || randomSeed();
+  // Use the seed that is currently in the box
+  const seedVal = seedEl.value.trim() || randomSeed(); 
   url.searchParams.set("seed", seedVal);
   try {
     await navigator.clipboard.writeText(url.toString());
@@ -638,6 +659,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const urlSeed = getSeedFromURL();
   if (urlSeed) {
     seedEl.value = urlSeed;
+    // Pretend the user typed it so the first render uses this seed
+    userHasInteractedWithSeed = true; 
   }
   render();
 });
