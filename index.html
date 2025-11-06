@@ -62,7 +62,6 @@
     .foot { margin-top: 18px; color: var(--muted); font-size: 0.85rem; }
     a { color: var(--accent); }
 
-    /* NEW STYLES */
     .hidden { display: none; }
     .problem-toggles { margin-top: 16px; display: flex; gap: 10px; }
     .answer-check { display: flex; gap: 10px; margin-top: 16px; }
@@ -76,7 +75,6 @@
     .correct { background: rgba(16, 185, 129, 0.2); color: var(--ok); }
     .incorrect { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
     
-    /* KaTeX font size */
     .katex { font-size: 1.1em; } 
   </style>
 </head>
@@ -185,12 +183,11 @@ function randInt(rng, min, max) { // inclusive
 }
 function choice(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 function formatAnswer(ans) {
-  // Helper to round to 2 decimal places if not an integer
   if (ans % 1 === 0) return ans;
   return ans.toFixed(2);
 }
 
-/* ========= NEW: KaTeX Auto-Render Setup ========= */
+/* ========= KaTeX Auto-Render Setup ========= */
 document.addEventListener("DOMContentLoaded", function() {
     window.katexOptions = {
         delimiters: [
@@ -199,7 +196,6 @@ document.addEventListener("DOMContentLoaded", function() {
         ],
         throwOnError: false
     };
-    // This re-runs KaTeX *after* you generate a new problem
     window.renderMath = function() {
         if (window.renderMathInElement) {
             renderMathInElement(problemBox, window.katexOptions);
@@ -222,18 +218,15 @@ const metaEl = document.getElementById("meta");
 const copyBtn = document.getElementById("copyBtn");
 const shareBtn = document.getElementById("shareBtn");
 
-// NEW: UI elements for toggles and answer checking
 const toggleHintBtn = document.getElementById("toggleHintBtn");
 const toggleSolutionBtn = document.getElementById("toggleSolutionBtn");
 const userAnswerInput = document.getElementById("userAnswerInput");
 const checkAnswerBtn = document.getElementById("checkAnswerBtn");
 const answerResultEl = document.getElementById("answerResultEl");
 
-// NEW: Global state for answer checking
 let userHasInteractedWithSeed = false;
 let currentProblemAnswer = null;
 
-// Listen for user input on the seed box
 seedEl.addEventListener("input", () => {
   userHasInteractedWithSeed = true;
 });
@@ -252,23 +245,19 @@ function getSeedFromURL() {
   return params.get("seed");
 }
 
-/* ========= NEW: Dynamic Branch Logic ========= */
+/* ========= Dynamic Branch Logic ========= */
 function updateBranchOptions() {
   const difficulty = difficultyEl.value;
-  let currentBranch = branchEl.value; // Remember what was selected
+  let currentBranch = branchEl.value; 
   
-  // Define available branches based on difficulty
   let availableKeys = Object.keys(Branches);
   if (difficulty === 'EXTREME' || difficulty === 'PhD') {
       availableKeys = availableKeys.concat(Object.keys(AdvancedBranches));
   }
 
-  // Clear current options
   branchEl.innerHTML = "";
   
-  // Populate new options
   availableKeys.forEach(key => {
-      // Capitalize first letter for display
       const displayName = key.charAt(0).toUpperCase() + key.slice(1);
       const option = document.createElement("option");
       option.value = key;
@@ -276,13 +265,11 @@ function updateBranchOptions() {
       branchEl.appendChild(option);
   });
   
-  // Try to re-select the user's previous branch if it still exists
   if (availableKeys.includes(currentBranch)) {
       branchEl.value = currentBranch;
   }
 }
 
-// Add listener to update branches when difficulty changes
 difficultyEl.addEventListener("change", updateBranchOptions);
 /* ========= End Dynamic Branch Logic ========= */
 
@@ -302,7 +289,6 @@ function render() {
     seedStr = randomSeed();
   }
 
-  // NEW: Get the correct set of available branches
   let availableBranches = { ...Branches };
   if (difficulty === 'EXTREME' || difficulty === 'PhD') {
       availableBranches = { ...Branches, ...AdvancedBranches };
@@ -310,10 +296,8 @@ function render() {
 
   const payload = genProblem({difficulty, branch, style, seedStr, availableBranches});
 
-  // NEW: Store the correct answer
   currentProblemAnswer = payload.answer;
   
-  // NEW: Reset answer check and show/hide state
   userAnswerInput.value = "";
   answerResultEl.textContent = "";
   answerResultEl.className = "hidden";
@@ -322,10 +306,9 @@ function render() {
   toggleHintBtn.textContent = "Show Hint";
   toggleSolutionBtn.textContent = "Show Solution";
   
-  // Update text
   problemTextEl.textContent = payload.text;
   hintEl.textContent = "Hint: " + payload.hint;
-  solutionEl.innerHTML = "<b>Solution:</b><br>" + payload.solution; // Use innerHTML for KaTeX to render
+  solutionEl.innerHTML = "<b>Solution:</b><br>" + payload.solution; 
 
   metaEl.innerHTML = "";
   const metaPieces = [
@@ -344,7 +327,6 @@ function render() {
   seedEl.value = seedStr;
   userHasInteractedWithSeed = false;
   
-  // NEW: Call KaTeX renderer
   if (window.renderMath) {
       window.renderMath();
   }
@@ -353,7 +335,6 @@ function render() {
 generateBtn.addEventListener("click", render);
 
 copyBtn.addEventListener("click", async () => {
-  // Copies the raw text, not the rendered math
   const text = `${problemTextEl.textContent}\nHint: ${hintEl.textContent.replace("Hint: ","")}\nSolution: ${solutionEl.textContent.replace("Solution: ","")}\n[${metaEl.textContent}]`;
   try {
     await navigator.clipboard.writeText(text);
@@ -369,7 +350,6 @@ shareBtn.addEventListener("click", async () => {
   const url = new URL(location.href);
   const seedVal = seedEl.value.trim() || randomSeed(); 
   url.searchParams.set("seed", seedVal);
-  // NEW: Also share difficulty and branch
   url.searchParams.set("difficulty", difficultyEl.value);
   url.searchParams.set("branch", branchEl.value);
   try {
@@ -382,7 +362,7 @@ shareBtn.addEventListener("click", async () => {
   }
 });
 
-/* ========= NEW: Event Listeners for Toggles and Answer Check ========= */
+/* ========= Event Listeners for Toggles and Answer Check ========= */
 toggleHintBtn.addEventListener("click", () => {
     hintEl.classList.toggle("hidden");
     toggleHintBtn.textContent = hintEl.classList.contains("hidden") ? "Show Hint" : "Hide Hint";
@@ -391,14 +371,21 @@ toggleHintBtn.addEventListener("click", () => {
 toggleSolutionBtn.addEventListener("click", () => {
     solutionEl.classList.toggle("hidden");
     toggleSolutionBtn.textContent = solutionEl.classList.contains("hidden") ? "Show Solution" : "Hide Solution";
-    // Also render math if it was hidden
     if (!solutionEl.classList.contains("hidden") && window.renderMath) {
         window.renderMath();
     }
 });
 
 checkAnswerBtn.addEventListener("click", () => {
-    const userAnswer = parseFloat(userAnswerInput.value.trim());
+    const userAnswerText = userAnswerInput.value.trim();
+    // Allow for "pi" as an answer
+    let userAnswer;
+    if (userAnswerText.toLowerCase() === 'pi') {
+        userAnswer = Math.PI;
+    } else {
+        userAnswer = parseFloat(userAnswerText);
+    }
+    
     answerResultEl.classList.remove("hidden");
 
     // Epsilon comparison for floating point numbers
@@ -424,11 +411,14 @@ window.addEventListener("DOMContentLoaded", () => {
       difficultyEl.value = urlDifficulty;
   }
 
-  // NEW: Update branch options *before* setting the branch value
   updateBranchOptions(); 
 
   if (urlBranch) {
-      branchEl.value = urlBranch;
+      // Check if this branch is valid for the loaded difficulty
+      const validBranches = Array.from(branchEl.options).map(opt => opt.value);
+      if (validBranches.includes(urlBranch)) {
+          branchEl.value = urlBranch;
+      }
   }
   
   if (urlSeed) {
@@ -446,6 +436,12 @@ function genProblem({difficulty, branch, style, seedStr, availableBranches}) {
   const rng = makeRng(seedStr);
 
   let payload;
+  
+  // Fallback if branch isn't available (e.g., URL param mismatch)
+  if (!availableBranches[branch]) {
+      branch = "arithmetic"; 
+  }
+  
   if (branch === "mixed") {
     payload = generateMixed(rng, diff, style, availableBranches);
   } else {
@@ -459,7 +455,7 @@ function genProblem({difficulty, branch, style, seedStr, availableBranches}) {
 
   // Add occasional multi-step twist for higher difficulties
   if (diff.steps >= 3 && style !== "word problem") {
-    if (rng() < 0.5 && payload.answer) { // Check if payload has an answer to build on
+    if (rng() < 0.5 && payload.answer) { 
       const x = randInt(rng, 2, 9);
       const newAnswer = x * payload.answer;
       payload.text += ` Then, using your result $r$, compute $${x}r$.`;
@@ -511,7 +507,7 @@ const contexts = {
   gym:      { items: "weights", people: "trainers", place: "gym" }
 };
 
-/* ========= Branch templates (ALL UPDATED) ========= */
+/* ========= Branch templates (ALL UPDATED FOR KaTeX and Answers) ========= */
 const Branches = {
   arithmetic: {
     normal: (rng, diff) => {
@@ -537,7 +533,7 @@ const Branches = {
         return {
           text: `${choice(rng,names)} is at a ${ctx.place} with ${n} ${ctx.items}. They pack ${m} per box. How many boxes are needed?`,
           hint: `Divide total items by items per box. You must round up if there's a remainder.`,
-          solution: `Boxes = $${n} \\div ${m} = ${n/m}$. Since you can't have a partial box for the remainder, you must round up. $$${answer}$$ boxes are needed.`,
+          solution: `Boxes = $${n} \\div ${m} = ${formatAnswer(n/m)}$. Since you can't have a partial box for the remainder, you must round up. $${answer}$ boxes are needed.`,
           answer: answer
         };
       },
@@ -549,9 +545,11 @@ const Branches = {
         const p2 = randInt(rng, 1, diff.range + 5);
         const answer = (n1 * p1) + (n2 * p2);
         return {
-          text: `${choice(rng,names)} is at the ${ctx.place} and buys ${n1} ${ctx.items} at $${p1} each and ${n2} other ${ctx.items} at $${p2} each. What is the total cost?`,
+          // FIXED: Escaped dollar signs \$
+          text: `${choice(rng,names)} is at the ${ctx.place} and buys $${n1}$ ${ctx.items} at \$${p1} each and $${n2}$ other ${ctx.items} at \$${p2} each. What is the total cost?`,
           hint: `Total cost = (quantity 1 $\\times$ price 1) + (quantity 2 $\\times$ price 2).`,
-          solution: `Total = $(${n1} \\times ${p1}) + (${n2} \\times ${p2}) = ${n1*p1} + ${n2*p2} = $${answer}$`,
+          // FIXED: Escaped dollar signs \$
+          solution: `Total = $(${n1} \\times ${p1}) + (${n2} \\times ${p2}) = ${n1*p1} + ${n2*p2} = \$${answer}$`,
           answer: answer
         };
       }
@@ -565,7 +563,7 @@ const Branches = {
         text: `Find two numbers whose sum is $${sum}$ and product is $${product}$.`,
         hint: `Think about the factors of $${product}$. Which pair of factors adds up to $${sum}$?`,
         solution: `The factor pairs of $${product}$ include $(1, ${product})$, $(${a}, ${b})$, etc. We check their sums. $${a} + ${b} = ${sum}$. The two numbers are $${a}$ and $${b}$.`,
-        answer: a // Accept 'a' or 'b' - but answer check only checks one.
+        answer: a // Note: user could answer a or b. Answer check will only validate 'a'.
       };
     }
   },
@@ -578,7 +576,8 @@ const Branches = {
       const r = r_sub_q + q;
       const answer = (r - q) / p;
       return {
-        text: `Solve for $x$: $${p}x + ${q} = ${r}$`,
+        // FIXED: Made this a display block
+        text: `Solve for $x$: $$${p}x + ${q} = ${r}$$`,
         hint: `Isolate $x$. First subtract $${q}$ from both sides, then divide by $${p}$.`,
         solution: `$$${p}x + ${q} = ${r}$$ $$${p}x = ${r} - ${q}$$ $$${p}x = ${r-q}$$ $$x = \\frac{${r-q}}{${p}}$$ $$x = ${answer}$$`,
         answer: answer
@@ -599,6 +598,33 @@ const Branches = {
           solution: `$$${total} = ${y} + ${x}h$$ $$${total} - ${y} = ${x}h$$ $$${total-y} = ${x}h$$ $$h = \\frac{${total-y}}{${x}}$$ $$h = ${answer}$$`,
           answer: answer
         };
+      },
+      (rng, diff) => { // Template 2: Perimeter
+        const ctx = choice(rng, Object.values(contexts));
+        const l = randInt(rng, 5, diff.range + 10);
+        const w = randInt(rng, 5, diff.range + 10);
+        const p = 2 * (l + w);
+        const answer = w;
+        return {
+          text: `A rectangular ${ctx.place} has a perimeter of $${p}$ meters. The length is $${l}$ meters. Let the width be $w$. Given $P = 2(l + w)$, find the width.`,
+          hint: `Substitute the known values into the formula $${p} = 2(${l} + w)$ and solve for $w$.`,
+          solution: `$$${p} = 2(${l} + w)$$ $$\\frac{${p}}{2} = ${l} + w$$ $$${p/2} = ${l} + w$$ $$w = ${p/2} - ${l}$$ $$w = ${answer}$$`,
+          answer: answer
+        };
+      },
+      (rng, diff) => { // Template 3: Cost
+        const name = choice(rng, names);
+        const ctx = choice(rng, Object.values(contexts));
+        const x = randInt(rng, 3, diff.range + 3);
+        const p = randInt(rng, 2, diff.range);
+        const t = x * p;
+        const answer = p;
+        return {
+          text: `${name} buys $${x}$ ${ctx.items} at the ${ctx.place}. The total cost was \$${t}. If each item costs '$p'$, solve for '$p'$.`,
+          hint: `Total cost = quantity $\\times$ price. So, $${t} = ${x} \\times p$.`,
+          solution: `$$${t} = ${x}p$$ $$p = \\frac{${t}}{${x}}$$ $$p = ${answer}$$`,
+          answer: answer
+        };
       }
     ],
     solving: (rng, diff) => {
@@ -608,12 +634,191 @@ const Branches = {
       const c = a * c_div_a; // Nice division
       const answer = (c / a) + b;
       return {
-        text: `Solve for $x$: $${a}(x - ${b}) = ${c}$`,
+        text: `Solve for $x$: $$${a}(x - ${b}) = ${c}$$`,
         hint: `Divide both sides by $${a}$, then add $${b}$ to both sides.`,
         solution: `$$${a}(x - ${b}) = ${c}$$ $$x - ${b} = \\frac{${c}}{${a}}$$ $$x - ${b} = ${c/a}$$ $$x = ${c/a} + ${b}$$ $$x = ${answer}$$`,
         answer: answer
       };
     }
+  },
+  
+  ratios: {
+      normal: (rng, diff) => {
+          const a = randInt(rng, 2, 12);
+          const b = randInt(rng, 2, 12);
+          const scale = randInt(rng, 2, 10);
+          const answer = a * scale; // Just check first part
+          return {
+              text: `A ratio $${a}:${b}$ is scaled by $${scale}$. What is the first part of the new ratio?`,
+              hint: `Multiply both parts of the ratio by the scale factor $${scale}$.`,
+              solution: `The new ratio is $(${a} \\times ${scale}) : (${b} \\times ${scale})$ $$\\Rightarrow ${a*scale} : ${b*scale}$$ The first part is $${answer}$.`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const ctx = choice(rng, Object.values(contexts));
+              const items = randInt(rng, 10, diff.range + 10);
+              const people = randInt(rng, 2, 12);
+              const answer = people / items;
+              return {
+                  text: `${choice(rng, names)} is at a ${ctx.place} with $${items}$ ${ctx.items} and $${people}$ ${ctx.people}. What is the ratio of ${ctx.people} to ${ctx.items} (as a decimal)?`,
+                  hint: `Ratio = $\\frac{\\text{people}}{\\text{items}}$.`,
+                  solution: `Ratio = $$\\frac{${people}}{${items}} = ${formatAnswer(answer)}$$`,
+                  answer: answer
+              };
+          },
+          (rng, diff) => {
+              const name1 = choice(rng, names);
+              let name2 = choice(rng, names);
+              while (name1 === name2) name2 = choice(rng, names);
+              const ctx = choice(rng, Object.values(contexts));
+              const a = randInt(rng, 2, 9);
+              const b = randInt(rng, 2, 9);
+              const total = (a + b) * randInt(rng, 3, diff.range);
+              const answer = (a / (a + b)) * total;
+              return {
+                  text: `${name1} and ${name2} share $${total}$ ${ctx.items} from the ${ctx.place} in the ratio $${a}:${b}$. How many items does ${name1} get?`,
+                  hint: `The total number of parts is $${a+b}$. ${name1}'s share is $\\frac{${a}}{${a+b}}$ of the total.`,
+                  solution: `${name1}'s items = $$\\frac{${a}}{${a} + ${b}} \\times ${total} = \\frac{${a}}{${a+b}} \\times ${total} = ${formatAnswer(answer)}$$`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const a = randInt(rng, 2, 9);
+          const b = randInt(rng, 2, 9);
+          const total = randInt(rng, 30, 300);
+          const answer = (a / (a + b)) * total;
+          return {
+              text: `A total of $${total}$ is divided in the ratio $${a}:${b}$. How much is the first part?`,
+              hint: `Sum the parts to get the denominator: $${a+b}$. The first part is $\\frac{${a}}{${a+b}}$ of the total.`,
+              solution: `First part = $$\\frac{${a}}{${a} + ${b}} \\times ${total} = ${formatAnswer(answer)}$$`,
+              answer: answer
+          };
+      }
+  },
+  
+  rates: {
+      normal: (rng, diff) => {
+          const dist = randInt(rng, 10, diff.range + 50);
+          const speed = randInt(rng, 10, 120);
+          const answer = dist / speed;
+          return {
+              text: `Traveling at $${speed}$ km/h for a distance of $${dist}$ km, how long does it take (in hours)?`,
+              hint: `Time = $\\frac{\\text{Distance}}{\\text{Speed}}$.`,
+              solution: `$$t = \\frac{${dist}}{${speed}} = ${formatAnswer(answer)}$$ hours.`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const ctx = choice(rng, Object.values(contexts));
+              const numItems = randInt(rng, 20, diff.range + 50);
+              const people = randInt(rng, 2, 15);
+              const rate = randInt(rng, 1, 5);
+              const answer = numItems / (people * rate);
+              return {
+                  text: `${choice(rng, names)} is at a ${ctx.place} with $${numItems}$ ${ctx.items} and $${people}$ ${ctx.people}. Each person processes $${rate}$ ${ctx.items} per hour. How many hours to finish?`,
+                  hint: `Total rate = people $\\times$ individual rate. Time = $\\frac{\\text{Total Items}}{\\text{Total Rate}}$.`,
+                  solution: `Total Rate = $${people} \\times ${rate} = ${people * rate}$ ${ctx.items}/hr.
+                             $$Time = \\frac{${numItems}}{${people * rate}} = ${formatAnswer(answer)}$$ hours.`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const a = randInt(rng, 30, 200);
+          const b = randInt(rng, 1, 6);
+          const t = randInt(rng, 2, 10);
+          const answer = (a/b) * t;
+          return {
+              text: `A machine makes $${a}$ units in $${b}$ hours at a constant rate. How many units $f(t)$ does it make in $${t}$ hours?`,
+              hint: `First, find the rate (units per hour): $\\frac{${a}}{${b}}$. Then multiply by $t$.`,
+              solution: `Rate = $$\\frac{${a}}{${b}}$$. 
+                         $$f(t) = Rate \\times t$$
+                         $$f(${t}) = \\frac{${a}}{${b}} \\times ${t} = ${formatAnswer(answer)}$$ units.`,
+              answer: answer
+          };
+      }
+  },
+
+  percentages: {
+      normal: (rng, diff) => {
+          const base = randInt(rng, 50, diff.range + 200);
+          const pct = randInt(rng, 5, 60);
+          const answer = base * (1 + pct / 100);
+          return {
+              text: `Increase $${base}$ by $${pct}\\%$. What is the new value?`,
+              hint: `New Value = Base $\\times$ (1 + $\\frac{\\text{percent}}{100}$).`,
+              solution: `New = $$${base} \\times (1 + \\frac{${pct}}{100}) = ${base} \\times (1 + ${pct/100}) = ${base} \\times ${1 + pct/100} = ${formatAnswer(answer)}$$`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const name = choice(rng, names);
+              const price = randInt(rng, 20, 200);
+              const disc = randInt(rng, 10, 50);
+              const answer = price * (1 - disc / 100);
+              return {
+                  text: `${name} buys a tool priced at \$${price} with a $${disc}\\%$ discount. What is the final price?`,
+                  hint: `Final Price = Original Price $\\times$ (1 - $\\frac{\\text{discount}}{100}$).`,
+                  solution: `Final = $$\\$${price} \\times (1 - \\frac{${disc}}{100}) = \$${price} \\times (1 - ${disc/100}) = \$${formatAnswer(answer)}$$`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const start = randInt(rng, 60, 300);
+          const end = randInt(rng, 60, 500);
+          const answer = ((end - start) / start) * 100;
+          return {
+              text: `A value changes from $${start}$ to $${end}$. What is the percentage change?`,
+              hint: `Percent Change = $\\frac{\\text{New} - \\text{Old}}{\\text{Old}} \\times 100\\%$.`,
+              solution: `Change = $$(\\frac{${end} - ${start}}{${start}}) \\times 100 = (\\frac{${end-start}}{${start}}) \\times 100 = ${formatAnswer(answer)}\\%$$`,
+              answer: answer
+          };
+      }
+  },
+
+  probability: {
+      normal: (rng, diff) => {
+          const red = randInt(rng, 1, 10);
+          const blue = randInt(rng, 1, 10);
+          const answer = red / (red + blue);
+          return {
+              text: `A bag has $${red}$ red and $${blue}$ blue balls. What is the probability of drawing a red ball (as a decimal)?`,
+              hint: `Probability = $\\frac{\\text{Favorable Outcomes}}{\\text{Total Outcomes}}$.`,
+              solution: `$$P(\\text{Red}) = \\frac{\\text{Red}}{\\text{Red} + \\text{Blue}} = \\frac{${red}}{${red} + ${blue}} = \\frac{${red}}{${red+blue}} = ${formatAnswer(answer)}$$`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const n = randInt(rng, 2, 5);
+              const answer = 1 - (0.5 ** n);
+              return {
+                  text: `${choice(rng, names)} flips a fair coin $${n}$ times. What is the probability of getting at least one 'Heads'?`,
+                  hint: `Use the complement: $P(\\text{at least one H}) = 1 - P(\\text{no H})$. The probability of no H is $P(\\text{all T})$.`,
+                  solution: `$$P(\\text{all Tails}) = (0.5)^${n} = ${0.5**n}$$
+                             $$P(\\text{at least one Heads}) = 1 - P(\\text{all Tails}) = 1 - ${0.5**n} = ${answer}$$`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const n = randInt(rng, 4, 10);
+          const answer = 1 - ((5/6) ** n);
+          return {
+              text: `Roll a fair 6-sided die $${n}$ times. What is the probability of rolling at least one 6?`,
+              hint: `Use the complement: $1 - P(\\text{no 6s})$. The probability of *not* rolling a 6 is $\\frac{5}{6}$.`,
+              solution: `$$P(\\text{no 6 in one roll}) = \\frac{5}{6}$$
+                         $$P(\\text{no 6s in ${n} rolls}) = (\\frac{5}{6})^${n}$$
+                         $$P(\\text{at least one 6}) = 1 - (\\frac{5}{6})^${n} \\approx ${formatAnswer(answer)}$$`,
+              answer: answer
+          };
+      }
   },
 
   geometry: {
@@ -633,10 +838,20 @@ const Branches = {
         const r = randInt(rng, 2, 20);
         const answer = Math.PI * (r**2);
         return {
-          text: `A circular ${contexts.farm.place} has a radius of $${r}$ meters. What is its area? (Use $\\pi \\approx 3.14159$)`,
+          text: `A circular ${contexts.farm.place} has a radius of $${r}$ meters. What is its area? (Enter a number, or 'pi' for $\\pi$)`,
           hint: `The formula for the area of a circle is $A = \\pi r^2$.`,
-          solution: `$$A = \\pi r^2$$ $$A = \\pi \\times ${r}^2$$ $$A = ${answer}$$`,
+          solution: `$$A = \\pi r^2$$ $$A = \\pi \\times ${r}^2$$ $$A = ${r**2}\\pi \\approx ${formatAnswer(answer)}$$`,
           answer: answer
+        };
+      },
+      (rng, diff) => {
+        const s = randInt(rng, 3, diff.range + 3);
+        const answer = s**3;
+        return {
+            text: `A ${contexts.warehouse.place} stores ${contexts.warehouse.items} in cubic boxes. If one box has a side length of $${s}$ cm, what is its volume?`,
+            hint: `Volume of a cube = $\\text{side}^3$.`,
+            solution: `$$V = s^3 = ${s}^3 = ${answer}$$ cm$^3$.`,
+            answer: answer
         };
       }
     ],
@@ -644,34 +859,201 @@ const Branches = {
       const r = randInt(rng, 2, 20);
       const answer = 2 * Math.PI * r;
       return {
-        text: `A circle has a radius of $${r}$. Find its circumference. (Use $\\pi \\approx 3.14159$)`,
+        text: `A circle has a radius of $${r}$. Find its circumference. (Enter a number, or 'pi' for $\\pi$)`,
         hint: `Circumference = $2 \\times \\pi \\times r$.`,
-        solution: `$$C = 2\\pi r$$ $$C = 2 \\times \\pi \\times ${r}$$ $$C = ${answer}$$`,
+        solution: `$$C = 2\\pi r$$ $$C = 2 \\times \\pi \\times ${r} = ${2*r}\\pi \\approx ${formatAnswer(answer)}$$`,
         answer: answer
       };
     }
   },
-  
-  // ... (Other branches updated similarly with KaTeX and 'answer') ...
-  
-  // For brevity, I'll skip re-pasting all templates,
-  // but they would all need to be updated like the ones above.
-  // I will add the new AdvancedBranches.
+
+  sequences: {
+      normal: (rng, diff) => {
+          const a1 = randInt(rng, 1, 20);
+          const d = randInt(rng, 1, 15);
+          const n = randInt(rng, 5, 20);
+          const answer = a1 + (n - 1) * d;
+          return {
+              text: `For an arithmetic sequence with $a_1 = ${a1}$ and common difference $d = ${d}$, find the ${n}th term ($a_{${n}}$).`,
+              hint: `Use the formula: $a_n = a_1 + (n-1)d$.`,
+              solution: `$$a_{${n}} = ${a1} + (${n}-1) \\times ${d}$$ $$a_{${n}} = ${a1} + ${n-1} \\times ${d} = ${a1} + ${(n-1)*d} = ${answer}$$`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const name = choice(rng, names);
+              const start = randInt(rng, 10, diff.range + 10);
+              const d = randInt(rng, 2, diff.range);
+              const n = randInt(rng, 5, 20);
+              const answer = start + (n - 1) * d;
+              return {
+                  text: `${name} saves \$${start} in the first week, and \$${d} *more* each week than the last. How much will ${name} save in week $${n}$?`,
+                  hint: `This is an arithmetic sequence: $a_1 = ${start}$, $d = ${d}$. Find $a_{${n}}$.`,
+                  solution: `$$a_n = a_1 + (n-1)d$$ $$a_{${n}} = ${start} + (${n}-1) \\times ${d} = ${answer}$$
+                             ${name} will save \$${answer}.`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const a1 = randInt(rng, 1, 10);
+          const r = randInt(rng, 2, 6);
+          const n = randInt(rng, 4, 10);
+          const answer = (r === 1) ? (a1 * n) : (a1 * (1 - r**n) / (1 - r));
+          return {
+              text: `For a geometric sequence $a_1 = ${a1}$ and common ratio $r = ${r}$, find the sum of the first $${n}$ terms ($S_{${n}}$).`,
+              hint: `Use the geometric series sum formula: $S_n = a_1 \\frac{1 - r^n}{1 - r}$.`,
+              solution: `$$S_n = ${a1} \\frac{1 - ${r}^${n}}{1 - ${r}} = ${a1} \\frac{1 - ${r**n}}{${1-r}} = ${a1} \\frac{${1 - r**n}}{${1-r}} = ${answer}$$`,
+              answer: answer
+          };
+      }
+  },
+
+  exponents: {
+      normal: (rng, diff) => {
+          const a = randInt(rng, 2, 9);
+          const b = randInt(rng, 2, 5);
+          const c = randInt(rng, 2, 5);
+          const answer = b + c;
+          return {
+              text: `Simplify: $${a}^${b} \\times ${a}^${c}$. Express your answer as $${a}^k$. What is $k$?`,
+              hint: `When multiplying powers with the same base, add the exponents: $x^m \\times x^n = x^{m+n}$.`,
+              solution: `$$${a}^${b} \\times ${a}^${c} = ${a}^{${b} + ${c}} = ${a}^${answer}$$ So, $k = ${answer}$.`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const base = randInt(rng, 2, 5);
+              const days = randInt(rng, 3, 8);
+              const answer = base * (2 ** days);
+              return {
+                  text: `Bacteria in a ${contexts.lab.place} double every day. If you start with $${base}$ cells, how many cells will there be after $${days}$ days?`,
+                  hint: `Use the formula $N = N_0 \\times 2^t$, where $N_0$ is the initial number and $t$ is time.`,
+                  solution: `$$N = ${base} \\times 2^${days} = ${base} \\times ${2**days} = ${answer}$$ cells.`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const a = randInt(rng, 2, 9);
+          const k = randInt(rng, 2, 5);
+          const p = randInt(rng, 1, 3);
+          const answer = k - p;
+          return {
+              text: `Solve for $x$: $${a}^x \\times ${a}^${p} = ${a}^${k}$`,
+              hint: `First combine the terms on the left: $a^{x+p} = a^k$. If bases are equal, exponents are equal.`,
+              solution: `$$${a}^{x+${p}} = ${a}^${k}$$ $$x + ${p} = ${k}$$ $$x = ${k} - ${p} = ${answer}$$`,
+              answer: answer
+          };
+      }
+  },
+
+  inequalities: {
+      normal: (rng, diff) => {
+          const p = randInt(rng, 2, 9);
+          const q = randInt(rng, 1, 20);
+          const r = randInt(rng, q + p + 1, q + p * 5); // Ensure r-q is divisible by p
+          const rhs = p * randInt(rng, 2, 10);
+          const answer = rhs / p;
+          return {
+              text: `Solve for $x$: $${p}x + ${q} > ${q + rhs}$`,
+              hint: `Isolate $x$ just like in an equation. Subtract $${q}$, then divide by $${p}$.`,
+              solution: `$$${p}x + ${q} > ${q + rhs}$$ $$${p}x > ${q + rhs} - ${q}$$ $$${p}x > ${rhs}$$ $$x > \\frac{${rhs}}{${p}}$$ $$x > ${answer}$$`,
+              answer: answer // Answer check will be tricky. Maybe ask "What is the bound?"
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const name = choice(rng, names);
+              const ctx = choice(rng, Object.values(contexts));
+              const B = randInt(rng, 50, diff.range + 50);
+              const p = randInt(rng, 5, 15);
+              const answer = Math.floor(B / p);
+              return {
+                  text: `${name} has a budget of \$${B} for the ${ctx.place}. They want to buy ${ctx.items} that cost \$${p} each. What is the *maximum* number of ${ctx.items} ($x$) they can buy?`,
+                  hint: `The total cost ($p \\times x$) must be less than or equal to the budget ($B$). Solve $${p}x \\le ${B}$.`,
+                  solution: `$$${p}x \\le ${B}$$ $$x \\le \\frac{${B}}{${p}}$$ $$x \\le ${formatAnswer(B/p)}$$ Since $x$ must be a whole number, the maximum is $${answer}$.`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const a = randInt(rng, -8, -2); // Negative number
+          const b = randInt(rng, 1, 12);
+          const rhs = a * randInt(rng, 2, 5);
+          const answer = (rhs / a) + b;
+          return {
+              text: `Solve for $x$: $${a}(x - ${b}) \\ge ${rhs}$. (Find the bound)`,
+              hint: `Divide by $${a}$. Remember to **flip the inequality sign** when you divide by a negative number!`,
+              solution: `$$${a}(x - ${b}) \\ge ${rhs}$$ $$x - ${b} \\le \\frac{${rhs}}{${a}}$$  (sign flips!)
+                         $$x - ${b} \\le ${rhs/a}$$ $$x \\le ${rhs/a} + ${b}$$ $$x \\le ${answer}$$`,
+              answer: answer
+          };
+      }
+  },
+
+  statistics: {
+      normal: (rng, diff) => {
+          const n = randInt(rng, 5, 10);
+          const data = Array.from({length: n}, () => randInt(rng, 1, 30));
+          const sum = data.reduce((s, v)=>s+v, 0);
+          const answer = sum / n;
+          return {
+              text: `Data set: $[${data.join(", ")}]$. Find the mean.`,
+              hint: `Mean = $\\frac{\\text{Sum of values}}{\\text{Count of values}}$.`,
+              solution: `Sum = $${data.join(" + ")} = ${sum}$. Count = $${n}$.
+                         $$Mean = \\frac{${sum}}{${n}} = ${formatAnswer(answer)}$$`,
+              answer: answer
+          };
+      },
+      word: [
+          (rng, diff) => {
+              const days = randInt(rng, 5, 7); // Use odd number for easy median
+              const outputs = Array.from({length: days}, () => randInt(rng, 10, 40));
+              const sorted = [...outputs].sort((a,b) => a - b);
+              const midIndex = Math.floor(days / 2);
+              const answer = sorted[midIndex];
+              return {
+                  text: `A factory produces units over $${days}$ days: $[${outputs.join(", ")}]$. What is the median?`,
+                  hint: `Sort the data and pick the middle value.`,
+                  solution: `Original: $[${outputs.join(", ")}]$.
+                             Sorted: $[${sorted.join(", ")}]$.
+                             The middle value is the $${midIndex+1}$th number: $${answer}$.`,
+                  answer: answer
+              };
+          }
+      ],
+      solving: (rng, diff) => {
+          const n = randInt(rng, 6, 12);
+          const k = randInt(rng, 1, 5);
+          return {
+              text: `In a data set of $${n}$ values, $${k}$ are extreme outliers. Explain how removing these outliers would likely affect the **mean** vs. the **median**.`,
+              hint: `Which measure (mean or median) is more sensitive to outliers?`,
+              solution: `The **mean** is calculated by summing all values, so it is highly sensitive to outliers. Removing them would cause the mean to shift significantly.
+                         The **median** is the middle value. It is 'robust' to outliers. Removing $${k}$ outliers would likely change the median very little, if at all.`,
+              answer: 0 // No numerical answer
+          };
+      }
+  }
 };
 
-/* ========= NEW: Advanced Branch Templates ========= */
+/* ========= Advanced Branch Templates ========= */
 const AdvancedBranches = {
   calculus: {
     normal: (rng, diff) => {
       const a = randInt(rng, 2, 9);
-      const b = randInt(rng, 1, 20);
-      const answer = a * b; // f(x) = ax, f'(x) = a
+      const b = randInt(rng, 2, 9);
+      const x = randInt(rng, 1, 4);
+      const answer = a * b * (x ** (b-1));
       return {
-        text: `Find the derivative of $f(x) = ${a}x^${b}$ with respect to $x$.`,
-        hint: `Use the power rule: $\\frac{d}{dx}(cx^n) = cnx^{n-1}$`,
-        solution: `$$f'(x) = \\frac{d}{dx}(${a}x^${b})$$ $$f'(x) = ${a} \\times ${b}x^{${b-1}}$$ $$f'(x) = ${a*b}x^{${b-1}}$$`,
-        answer: a*b // Note: Answer check is tricky here. Let's just ask for the coefficient.
-        // A better problem would be "Evaluate f'(2)"
+        text: `Find the value of the derivative of $f(x) = ${a}x^${b}$ at the point $x = ${x}$.`,
+        hint: `First find $f'(x)$ using the power rule $\\frac{d}{dx}(cx^n) = cnx^{n-1}$, then substitute $x = ${x}$.`,
+        solution: `$$f'(x) = \\frac{d}{dx}(${a}x^${b}) = ${a} \\times ${b}x^{${b-1}} = ${a*b}x^{${b-1}}$$
+                     Now, plug in $x = ${x}$:
+                     $$f'(${x}) = ${a*b}(${x})^{${b-1}} = ${a*b} \\times ${x**(b-1)} = ${answer}$$`,
+        answer: answer
       };
     },
     word: [
@@ -682,7 +1064,7 @@ const AdvancedBranches = {
         return {
           text: `Find the area under the curve $f(x) = ${a}x^${b}$ from $x=0$ to $x=1$.`,
           hint: `Calculate the definite integral: $\\int_{0}^{1} ${a}x^${b} \\,dx$`,
-          solution: `$$\\int_{0}^{1} ${a}x^${b} \\,dx = \\left[ \\frac{${a}x^{${b+1}}}{${b+1}} \\right]_{0}^{1}$$ $$= \\left( \\frac{${a}(1)^{${b+1}}}{${b+1}} \\right) - \\left( \\frac{${a}(0)^{${b+1}}}{${b+1}} \\right)$$ $$= \\frac{${a}}{${b+1}}$$`,
+          solution: `$$\\int_{0}^{1} ${a}x^${b} \\,dx = \\left[ \\frac{${a}x^{${b+1}}}{${b+1}} \\right]_{0}^{1}$$ $$= \\left( \\frac{${a}(1)^{${b+1}}}{${b+1}} \\right) - \\left( \\frac{${a}(0)^{${b+1}}}{${b+1}} \\right)$$ $$= \\frac{${a}}{${b+1}} = ${formatAnswer(answer)}$$`,
           answer: answer
         };
       }
@@ -717,10 +1099,10 @@ const AdvancedBranches = {
         const b1 = randInt(rng, 1, 10), b2 = randInt(rng, 1, 10);
         const answer = a1 + b1; // Top-left element
         return {
-          text: `The ${contexts.warehouse.place} has two shipments, $A$ and $B$, with ${contexts.warehouse.items}. Matrix $A$ represents $${a1}$ tables and $${a2}$ chairs. Matrix $B$ represents $${b1}$ tables and $${b2}$ chairs. Find $A+B$.`,
+          text: `The ${contexts.warehouse.place} has two shipments. Matrix $A$ represents $${a1}$ tables and $${a2}$ chairs. Matrix $B$ represents $${b1}$ tables and $${b2}$ chairs. Find the total number of tables from $A+B$.`,
           hint: `Add the corresponding elements of each matrix. $A = \\begin{pmatrix} ${a1} \\\\ ${a2} \\end{pmatrix}, B = \\begin{pmatrix} ${b1} \\\\ ${b2} \\end{pmatrix}$`,
-          solution: `$$A+B = \\begin{pmatrix} ${a1} \\\\ ${a2} \\end{pmatrix} + \\begin{pmatrix} ${b1} \\\\ ${b2} \\end{pmatrix} = \\begin{pmatrix} ${a1}+${b1} \\\\ ${a2}+${b2} \\end{pmatrix} = \\begin{pmatrix} ${a1+b1} \\\\ ${a2+b2} \\end{pmatrix}$$`,
-          answer: answer // Just check one element
+          solution: `$$A+B = \\begin{pmatrix} ${a1} \\\\ ${a2} \\end{pmatrix} + \\begin{pmatrix} ${b1} \\\\ ${b2} \\end{pmatrix} = \\begin{pmatrix} ${a1}+${b1} \\\\ ${a2}+${b2} \\end{pmatrix} = \\begin{pmatrix} ${a1+b1} \\\\ ${a2+b2} \\end{pmatrix}$$ The total number of tables (top element) is $${answer}$.`,
+          answer: answer
         };
       }
     ],
