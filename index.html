@@ -70,12 +70,12 @@
         <div>
           <label for="difficulty">Difficulty</label>
           <select id="difficulty">
-            <option>easy</option>
-            <option>medium</option>
-            <option>hard</option>
-            <option>harder</option>
-            <option>EXTREME</option>
-            <option>PhD</option>
+            <option value="easy">Primary</option>
+            <option value="medium">Year 7-8</option>
+            <option value="hard">Year 9-10</option>
+            <option value="harder">Year 11-12</option>
+            <option value="EXTREME">University</option>
+            <option value="PhD">PhD</option>
           </select>
         </div>
         <div>
@@ -205,16 +205,42 @@ const Branches = {
         solution: `Work left to right respecting precedence for × and ÷.`
       };
     },
-    word: (rng, diff) => {
-      const ctx = choice(rng, Object.values(contexts));
-      const n = randInt(rng, 3, diff.range + 3);
-      const m = randInt(rng, 2, Math.max(4, Math.floor(n/2)));
-      return {
-        text: `${choice(rng,names)} is at a ${ctx.place} with ${n} ${ctx.items}. They pack ${m} per box. How many boxes are needed?`,
-        hint: `Divide total items by items per box.`,
-        solution: `Boxes = ${n} ÷ ${m}. If not divisible, round up.`
-      };
-    },
+    // --- MODIFIED: 'word' is now an array of templates ---
+    word: [
+      (rng, diff) => { // Template 1: Packing
+        const ctx = choice(rng, Object.values(contexts));
+        const n = randInt(rng, 3, diff.range + 3);
+        const m = randInt(rng, 2, Math.max(4, Math.floor(n/2)));
+        return {
+          text: `${choice(rng,names)} is at a ${ctx.place} with ${n} ${ctx.items}. They pack ${m} per box. How many boxes are needed?`,
+          hint: `Divide total items by items per box.`,
+          solution: `Boxes = ${n} ÷ ${m}. If not divisible, round up.`
+        };
+      },
+      (rng, diff) => { // Template 2: Total Cost
+        const ctx = choice(rng, Object.values(contexts));
+        const n1 = randInt(rng, 2, diff.range + 2);
+        const p1 = randInt(rng, 1, diff.range + 5);
+        const n2 = randInt(rng, 2, diff.range + 2);
+        const p2 = randInt(rng, 1, diff.range + 5);
+        return {
+          text: `${choice(rng,names)} is at the ${ctx.place} and buys ${n1} ${ctx.items} at $${p1} each and ${n2} other ${ctx.items} at $${p2} each. What is the total cost?`,
+          hint: `Total cost = (quantity 1 × price 1) + (quantity 2 × price 2).`,
+          solution: `Total = (${n1} × ${p1}) + (${n2} × ${p2}).`
+        };
+      },
+      (rng, diff) => { // Template 3: Multi-step change
+        const ctx = choice(rng, Object.values(contexts));
+        const start = randInt(rng, 10, diff.range + 10);
+        const gave = randInt(rng, 2, Math.floor(start / 2));
+        const received = randInt(rng, 2, diff.range);
+        return {
+          text: `In the ${ctx.place}, ${choice(rng,names)} starts with ${start} ${ctx.items}. They give ${gave} to a friend and then receive ${received} more. How many ${ctx.items} do they have now?`,
+          hint: `Start with the initial amount, subtract the amount given, and add the amount received.`,
+          solution: `Final = ${start} - ${gave} + ${received}.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const target = randInt(rng, 20, diff.range + 40);
       const a = randInt(rng, 1, diff.range); const b = randInt(rng, 1, diff.range);
@@ -236,19 +262,44 @@ const Branches = {
         solution: `x = (${r} - ${q}) ÷ ${p}.`
       };
     },
-    word: (rng, diff) => {
-      const name = choice(rng, names);
-      const ctx = choice(rng, Object.values(contexts)); // No longer hardcoded
-      const x = randInt(rng, 2, 9); // items per hour
-      const y = randInt(rng, 5, 20); // starting items
-      const h = randInt(rng, 2, 5); // hours
-      const total = y + x * h;
-      return {
-        text: `${name} is at the ${ctx.place} which starts with ${y} ${ctx.items}. ${name} adds ${x} ${ctx.items} per hour. The total T is given by T = ${y} + ${x}h, where h is hours. How many hours has it been if the total is now ${total}?`,
-        hint: `Solve for h in ${total} = ${y} + ${x}h.`,
-        solution: `h = (${total} - ${y}) / ${x}.`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Rate of addition
+        const name = choice(rng, names);
+        const ctx = choice(rng, Object.values(contexts));
+        const x = randInt(rng, 2, 9); // items per hour
+        const y = randInt(rng, 5, 20); // starting items
+        const h = randInt(rng, 2, 5); // hours
+        const total = y + x * h;
+        return {
+          text: `${name} is at the ${ctx.place} which starts with ${y} ${ctx.items}. ${name} adds ${x} ${ctx.items} per hour. The total T is given by T = ${y} + ${x}h, where h is hours. How many hours has it been if the total is now ${total}?`,
+          hint: `Solve for h in ${total} = ${y} + ${x}h.`,
+          solution: `h = (${total} - ${y}) / ${x}.`
+        };
+      },
+      (rng, diff) => { // Template 2: Perimeter
+        const ctx = choice(rng, Object.values(contexts));
+        const l = randInt(rng, 5, diff.range + 10);
+        const w = randInt(rng, 5, diff.range + 10);
+        const p = 2 * (l + w);
+        return {
+          text: `A rectangular ${ctx.place} has a perimeter of ${p} meters. The length is ${l} meters. Let the width be 'w'. Given P = 2(l + w), find the width.`,
+          hint: `Substitute the known values into the formula ${p} = 2(${l} + w) and solve for w.`,
+          solution: `Divide by 2: ${p/2} = ${l} + w. Then subtract ${l}: w = ${p/2} - ${l}.`
+        };
+      },
+      (rng, diff) => { // Template 3: Cost
+        const name = choice(rng, names);
+        const ctx = choice(rng, Object.values(contexts));
+        const x = randInt(rng, 3, diff.range + 3);
+        const p = randInt(rng, 2, diff.range);
+        const t = x * p;
+        return {
+          text: `${name} buys ${x} ${ctx.items} at the ${ctx.place}. The total cost was $${t}. If each item costs '$p', solve for 'p'.`,
+          hint: `Total cost = quantity × price. So, ${t} = ${x} × p.`,
+          solution: `p = ${t} / ${x}.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a = randInt(rng, 2, 8), b = randInt(rng, 1, 9), c = randInt(rng, 1, 12);
       return {
@@ -268,15 +319,42 @@ const Branches = {
         solution: `${a*scale}:${b*scale}.`
       };
     },
-    word: (rng, diff) => {
-      const ctx = choice(rng, Object.values(contexts));
-      const items = randInt(rng, 10, diff.range+10), people = randInt(rng, 2, 12);
-      return {
-        text: `${choice(rng,names)} is at a ${ctx.place} with ${items} ${ctx.items} and ${people} ${ctx.people}. What is the ratio of ${ctx.people} to ${ctx.items}?`,
-        hint: `Write people:items and simplify.`,
-        solution: `Ratio = ${people}:${items}, then reduce by GCD.`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: People to Items
+        const ctx = choice(rng, Object.values(contexts));
+        const items = randInt(rng, 10, diff.range+10), people = randInt(rng, 2, 12);
+        return {
+          text: `${choice(rng,names)} is at a ${ctx.place} with ${items} ${ctx.items} and ${people} ${ctx.people}. What is the ratio of ${ctx.people} to ${ctx.items}?`,
+          hint: `Write people:items and simplify.`,
+          solution: `Ratio = ${people}:${items}, then reduce by GCD.`
+        };
+      },
+      (rng, diff) => { // Template 2: Recipe
+        const ctx = contexts.kitchen;
+        const a = randInt(rng, 2, 10);
+        const b = randInt(rng, 2, 10);
+        const n = randInt(rng, 12, 48);
+        return {
+          text: `In the ${ctx.place}, a recipe for ${n} ${ctx.items} requires ${a} parts flour and ${b} parts sugar. What is the simplified ratio of flour to sugar?`,
+          hint: `Write the ratio as flour:sugar and simplify by dividing by the greatest common divisor.`,
+          solution: `Ratio = ${a}:${b}. Find GCD(${a}, ${b}) and divide both parts.`
+        };
+      },
+      (rng, diff) => { // Template 3: Sharing
+        const name1 = choice(rng, names);
+        let name2 = choice(rng, names);
+        while (name1 === name2) name2 = choice(rng, names); // Ensure names are different
+        const ctx = choice(rng, Object.values(contexts));
+        const a = randInt(rng, 2, 9);
+        const b = randInt(rng, 2, 9);
+        const total = (a + b) * randInt(rng, 3, diff.range);
+        return {
+          text: `${name1} and ${name2} share ${total} ${ctx.items} from the ${ctx.place} in the ratio ${a}:${b}. How many items does ${name1} get?`,
+          hint: `The total number of parts is ${a+b}. ${name1}'s share is (a / (a+b)) of the total.`,
+          solution: `${name1}'s items = ${total} × ${a} / (${a+b}).`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a = randInt(rng, 2, 9), b = randInt(rng, 2, 9), total = randInt(rng, 30, 300);
       return {
@@ -296,17 +374,39 @@ const Branches = {
         solution: `t = ${dist} ÷ ${speed} hours.`
       };
     },
-    word: (rng, diff) => {
-      const ctx = choice(rng, Object.values(contexts)); // No longer hardcoded
-      const numItems = randInt(rng, 20, diff.range+50);
-      const people = randInt(rng, 2, 15);
-      const rate = randInt(rng, 1, 5);
-      return {
-        text: `${choice(rng,names)} is at a ${ctx.place} with ${numItems} ${ctx.items} and ${people} ${ctx.people}. Each person processes ${rate} ${ctx.items} per hour. How many hours to finish?`,
-        hint: `Total rate = people × ${ctx.items}/hour.`,
-        solution: `Time = ${numItems} ÷ (${people} × ${rate}).`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Group Work
+        const ctx = choice(rng, Object.values(contexts));
+        const numItems = randInt(rng, 20, diff.range+50);
+        const people = randInt(rng, 2, 15);
+        const rate = randInt(rng, 1, 5);
+        return {
+          text: `${choice(rng,names)} is at a ${ctx.place} with ${numItems} ${ctx.items} and ${people} ${ctx.people}. Each person processes ${rate} ${ctx.items} per hour. How many hours to finish?`,
+          hint: `Total rate = people × ${ctx.items}/hour.`,
+          solution: `Time = ${numItems} ÷ (${people} × ${rate}).`
+        };
+      },
+      (rng, diff) => { // Template 2: Speed/Distance/Time
+        const name = choice(rng, names);
+        const d = randInt(rng, 20, diff.range + 100);
+        const s = randInt(rng, 10, 120);
+        return {
+          text: `${name} travels ${d} km at an average speed of ${s} km/h. How long (in hours) did the journey take?`,
+          hint: `Time = Distance / Speed.`,
+          solution: `Time = ${d} / ${s} hours.`
+        };
+      },
+      (rng, diff) => { // Template 3: Fill Rate
+        const ctx = contexts.lab;
+        const r = randInt(rng, 5, 50);
+        const V = randInt(rng, 100, diff.range + 100);
+        return {
+          text: `A ${ctx.place} machine fills ${ctx.items} at a rate of ${r} mL per minute. How long will it take to fill a ${V} mL container?`,
+          hint: `Time = Total Volume / Rate.`,
+          solution: `Time = ${V} / ${r} minutes.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a = randInt(rng, 30, 200), b = randInt(rng, 1, 6);
       return {
@@ -326,14 +426,37 @@ const Branches = {
         solution: `New = ${base} × (1 + ${pct}/100).`
       };
     },
-    word: (rng, diff) => {
-      const name = choice(rng, names), price = randInt(rng, 20, 200), disc = randInt(rng, 10, 50);
-      return {
-        text: `${name} buys a tool priced at $${price} with a ${disc}% discount. What is the final price?`,
-        hint: `Final = price × (1 - disc/100).`,
-        solution: `Final = ${price} × (1 - ${disc}/100).`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Discount
+        const name = choice(rng, names), price = randInt(rng, 20, 200), disc = randInt(rng, 10, 50);
+        return {
+          text: `${name} buys a tool priced at $${price} with a ${disc}% discount. What is the final price?`,
+          hint: `Final = price × (1 - disc/100).`,
+          solution: `Final = ${price} × (1 - ${disc}/100).`
+        };
+      },
+      (rng, diff) => { // Template 2: Tax
+        const name = choice(rng, names);
+        const ctx = choice(rng, Object.values(contexts));
+        const price = randInt(rng, 10, diff.range + 10);
+        const tax = randInt(rng, 5, 20);
+        return {
+          text: `${name} buys ${ctx.items} from the ${ctx.place} for $${price}. A sales tax of ${tax}% is added. What is the total cost?`,
+          hint: `Total = price × (1 + tax/100).`,
+          solution: `Total = ${price} × (1 + ${tax}/100).`
+        };
+      },
+      (rng, diff) => { // Template 3: Percent Change
+        const ctx = choice(rng, Object.values(contexts));
+        const start = randInt(rng, 50, diff.range + 50);
+        const end = randInt(rng, start + 10, start + 100);
+        return {
+          text: `The number of ${ctx.items} in the ${ctx.place} increased from ${start} to ${end}. What was the percentage increase?`,
+          hint: `Percent change = ((New - Old) / Old) × 100.`,
+          solution: `((${end} - ${start}) / ${start}) × 100%.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const start = randInt(rng, 60, 300), end = randInt(rng, 60, 500);
       return {
@@ -353,15 +476,36 @@ const Branches = {
         solution: `${red} / (${red + blue}).`
       };
     },
-    word: (rng, diff) => {
-      const ctx = contexts.class;
-      const correct = randInt(rng, 5, 20), wrong = randInt(rng, 2, 10);
-      return {
-        text: `In a ${ctx.place} quiz with ${correct} true and ${wrong} false statements shuffled, what is the probability a random pick is true?`,
-        hint: `True over total.`,
-        solution: `${correct} / (${correct + wrong}).`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Quiz
+        const ctx = contexts.class;
+        const correct = randInt(rng, 5, 20), wrong = randInt(rng, 2, 10);
+        return {
+          text: `In a ${ctx.place} quiz with ${correct} true and ${wrong} false statements shuffled, what is the probability a random pick is true?`,
+          hint: `True over total.`,
+          solution: `${correct} / (${correct + wrong}).`
+        };
+      },
+      (rng, diff) => { // Template 2: Items in a bag
+        const ctx = choice(rng, Object.values(contexts));
+        const name = choice(rng, names);
+        const a = randInt(rng, 2, diff.range);
+        const b = randInt(rng, 2, diff.range);
+        return {
+          text: `A bag in the ${ctx.place} contains ${a} red ${ctx.items} and ${b} blue ${ctx.items}. ${name} picks one at random. What is the probability it is red?`,
+          hint: `Probability = (Number of red items) / (Total number of items).`,
+          solution: `P(Red) = ${a} / (${a} + ${b}).`
+        };
+      },
+      (rng, diff) => { // Template 3: Dice
+        const name = choice(rng, names);
+        return {
+          text: `${name} rolls a standard 6-sided die. What is the probability of rolling an even number?`,
+          hint: `Count the even-numbered faces (2, 4, 6) and divide by the total number of faces.`,
+          solution: `There are 3 even faces (2, 4, 6) and 6 total faces. P(Even) = 3 / 6 = 1/2.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const n = randInt(rng, 4, 10);
       return {
@@ -381,14 +525,35 @@ const Branches = {
         solution: `A = ${l*w}, P = ${2*(l+w)}.`
       };
     },
-    word: (rng, diff) => {
-      const wood = randInt(rng, 4, 20), plank = randInt(rng, 2, 10);
-      return {
-        text: `A carpenter makes square frames using ${wood} m of wood per frame. If each side uses ${plank} m, how many frames can be made?`,
-        hint: `Per frame wood = 4×side length.`,
-        solution: `Frames = floor(${wood} ÷ (4×${plank})).`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Square Frames
+        const wood = randInt(rng, 4, 20), plank = randInt(rng, 2, 10);
+        return {
+          text: `A carpenter makes square frames using ${wood} m of wood per frame. If each side uses ${plank} m, how many frames can be made?`,
+          hint: `Per frame wood = 4×side length.`,
+          solution: `Frames = floor(${wood} ÷ (4×${plank})).`
+        };
+      },
+      (rng, diff) => { // Template 2: Area
+        const ctx = choice(rng, [contexts.farm, contexts.class, contexts.workshop]);
+        const l = randInt(rng, 5, diff.range + 5);
+        const w = randInt(rng, 5, diff.range + 5);
+        return {
+          text: `A rectangular ${ctx.place} has a length of ${l} meters and a width of ${w} meters. What is its total area?`,
+          hint: `Area of a rectangle = length × width.`,
+          solution: `Area = ${l} × ${w} square meters.`
+        };
+      },
+      (rng, diff) => { // Template 3: Volume
+        const ctx = choice(rng, [contexts.warehouse, contexts.lab]);
+        const s = randInt(rng, 3, diff.range + 3);
+        return {
+          text: `A ${ctx.place} stores ${ctx.items} in cubic boxes. If one box has a side length of ${s} cm, what is its volume?`,
+          hint: `Volume of a cube = side × side × side (or side³).`,
+          solution: `Volume = ${s} × ${s} × ${s} = ${s**3} cubic cm.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const r = randInt(rng, 2, 20);
       return {
@@ -408,14 +573,38 @@ const Branches = {
         solution: `aₙ = ${a1} + (${n-1})×${d}.`
       };
     },
-    word: (rng, diff) => {
-      const start = randInt(rng, 5, 50), step = randInt(rng, 2, 12), term = randInt(rng, 4, 25);
-      return {
-        text: `A worker stacks crates increasing by ${step} per layer starting at ${start}. How many crates on layer ${term}?`,
-        hint: `Arithmetic sequence term.`,
-        solution: `${start} + (${term-1})×${step}.`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Stacking
+        const start = randInt(rng, 5, 50), step = randInt(rng, 2, 12), term = randInt(rng, 4, 25);
+        return {
+          text: `A worker stacks crates increasing by ${step} per layer. The bottom layer has ${start}. How many crates on layer ${term} (from the bottom)?`,
+          hint: `This is an arithmetic sequence. Use aₙ = a₁ + (n-1)d.`,
+          solution: `aₙ = ${start} + (${term-1})×${step}.`
+        };
+      },
+      (rng, diff) => { // Template 2: Saving Money
+        const name = choice(rng, names);
+        const start = randInt(rng, 10, diff.range + 10);
+        const d = randInt(rng, 2, diff.range);
+        const n = randInt(rng, 5, 20);
+        return {
+          text: `${name} saves $${start} in the first week, and $${d} *more* each week than the last. How much will ${name} save in week ${n}?`,
+          hint: `Arithmetic sequence: a₁ = ${start}, d = ${d}. Find aₙ.`,
+          solution: `aₙ = ${start} + (${n-1})×${d}.`
+        };
+      },
+      (rng, diff) => { // Template 3: Geometric Growth
+        const ctx = contexts.lab;
+        const a = randInt(rng, 2, 20);
+        const r = randInt(rng, 2, 5); // multiplier
+        const n = randInt(rng, 3, 10);
+        return {
+          text: `A ${ctx.place} sample starts with ${a} bacteria. The population multiplies by ${r} every hour. How many bacteria will there be after ${n} hours?`,
+          hint: `Geometric sequence: a₁ = ${a}, r = ${r}. Find aₙ (or aₙ₊₁ depending on convention). Let's use N = a * r^n.`,
+          solution: `After ${n} hours, N = ${a} × ${r}^${n}. (a₁=${a}r for hour 1, or a₀=${a} for hour 0)`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a1 = randInt(rng, 1, 10), r = randInt(rng, 2, 6), n = randInt(rng, 4, 10);
       return {
@@ -435,14 +624,39 @@ const Branches = {
         solution: `${a}^${b+c}.`
       };
     },
-    word: (rng, diff) => {
-      const base = randInt(rng, 2, 5), days = randInt(rng, 3, 8);
-      return {
-        text: `Bacteria double each day starting with ${base} cells. After ${days} days, how many cells?`,
-        hint: `Exponential growth: N = N₀·2^t.`,
-        solution: `${base} × 2^${days}.`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Bacteria
+        const base = randInt(rng, 2, 5), days = randInt(rng, 3, 8);
+        return {
+          text: `Bacteria in a ${contexts.lab.place} double each day, starting with ${base} cells. After ${days} days, how many cells?`,
+          hint: `Exponential growth: N = N₀·2^t.`,
+          solution: `${base} × 2^${days}.`
+        };
+      },
+      (rng, diff) => { // Template 2: Compound Interest
+        const name = choice(rng, names);
+        const P = randInt(rng, 100, diff.range + 100);
+        const r_pct = randInt(rng, 2, 10);
+        const r = 1 + (r_pct / 100);
+        const t = randInt(rng, 3, 10);
+        return {
+          text: `${name} invests $${P} at a rate that multiplies by ${r} (a ${r_pct}% increase) each year. What is the value after ${t} years?`,
+          hint: `Use the compound interest formula V = P × r^t.`,
+          solution: `V = ${P} × (${r})^${t}.`
+        };
+      },
+      (rng, diff) => { // Template 3: Half-life
+        const ctx = contexts.lab;
+        const A = randInt(rng, 10, 50) * 10;
+        const n = randInt(rng, 2, 5);
+        const h = randInt(rng, 5, 20);
+        return {
+          text: `A ${ctx.place} ${ctx.items} has ${A}g of a substance with a half-life of ${h} years. How much will remain after ${n*h} years?`,
+          hint: `The time is ${n} half-lives. Use A_final = A_initial × (1/2)^n.`,
+          solution: `Final = ${A} × (1/2)^${n} = ${A} / 2^${n}.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a = randInt(rng, 2, 9), k = randInt(rng, 2, 5);
       return {
@@ -462,20 +676,43 @@ const Branches = {
         solution: `x > ${(q + p - q) / p}.`
       };
     },
-    word: (rng, diff) => {
-      const hours = randInt(rng, 10, 40), minWage = randInt(rng, 15, 30);
-      return {
-        text: `A worker earns $w per hour for ${hours} hours. To make at least $${hours*minWage}, what inequality must w satisfy?`,
-        hint: `Total pay ≥ target.`,
-        solution: `${hours}w ≥ ${hours*minWage} ⇒ w ≥ ${minWage}.`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Earning
+        const hours = randInt(rng, 10, 40), minWage = randInt(rng, 15, 30);
+        return {
+          text: `A worker earns $w per hour for ${hours} hours. To make at least $${hours*minWage}, what inequality must w satisfy?`,
+          hint: `Total pay ≥ target.`,
+          solution: `${hours}w ≥ ${hours*minWage} ⇒ w ≥ ${minWage}.`
+        };
+      },
+      (rng, diff) => { // Template 2: Budget
+        const name = choice(rng, names);
+        const ctx = choice(rng, Object.values(contexts));
+        const B = randInt(rng, 50, diff.range + 50);
+        const p = randInt(rng, 5, 15);
+        return {
+          text: `${name} has a budget of $${B} for the ${ctx.place}. They want to buy ${ctx.items} that cost $${p} each. What is the maximum number of ${ctx.items} ('x') they can buy?`,
+          hint: `The total cost (p × x) must be less than or equal to the budget (B).`,
+          solution: `${p}x ≤ ${B} ⇒ x ≤ ${B / p}. Max items = floor(${B / p}).`
+        };
+      },
+      (rng, diff) => { // Template 3: Temperature
+        const ctx = contexts.lab;
+        const T1 = randInt(rng, 15, 20);
+        const T2 = randInt(rng, 21, 30);
+        return {
+          text: `The ${ctx.place} ${ctx.items} must be kept above ${T1}°C and below ${T2}°C. Write a compound inequality for the temperature T.`,
+          hint: `T must be greater than ${T1} AND less than ${T2}.`,
+          solution: `${T1} < T < ${T2}.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const a = randInt(rng, 2, 8), b = randInt(rng, 1, 12);
       return {
         text: `Solve: ${a}(x - ${b}) ≤ ${a*b}.`,
         hint: `Divide by ${a}, then add ${b}.`,
-        solution: `x - ${b} ≤ ${b} ⇒ x ≤ ${b + b - b}.`
+        solution: `x - ${b} ≤ ${b} ⇒ x ≤ ${b + b - b}.` // Simplified from original
       };
     }
   },
@@ -491,15 +728,37 @@ const Branches = {
         solution: `Mean = ${sum} ÷ ${n}.`
       };
     },
-    word: (rng, diff) => {
-      const days = randInt(rng, 5, 7);
-      const outputs = Array.from({length: days}, () => randInt(rng, 10, 40));
-      return {
-        text: `A factory produces units over ${days} days: [${outputs.join(", ")}]. What is the median?`,
-        hint: `Sort and pick middle.`,
-        solution: `Sort values, choose middle (average two middles if even).`
-      };
-    },
+    word: [
+      (rng, diff) => { // Template 1: Median
+        const days = randInt(rng, 5, 7);
+        const outputs = Array.from({length: days}, () => randInt(rng, 10, 40));
+        return {
+          text: `A factory produces units over ${days} days: [${outputs.join(", ")}]. What is the median?`,
+          hint: `Sort and pick middle.`,
+          solution: `Sort values, choose middle (average two middles if even).`
+        };
+      },
+      (rng, diff) => { // Template 2: Mean
+        const ctx = contexts.class;
+        const n = randInt(rng, 5, 9);
+        const data = Array.from({length: n}, () => randInt(rng, 60, 100));
+        return {
+          text: `In ${choice(rng, names)}'s ${ctx.place}, ${n} ${ctx.people} received test scores: [${data.join(", ")}]. What is the mean (average) score?`,
+          hint: `Mean = (Sum of all scores) / (Number of scores).`,
+          solution: `Sum = ${data.reduce((a,b)=>a+b, 0)}. Mean = Sum / ${n}.`
+        };
+      },
+      (rng, diff) => { // Template 3: Range
+        const ctx = contexts.gym;
+        const n = 7; // 7 days in a week
+        const data = Array.from({length: n}, () => randInt(rng, 20, diff.range + 20));
+        return {
+          text: `The ${ctx.place} tracks daily visitors for a week: [${data.join(", ")}]. What is the range of the visitor data?`,
+          hint: `Range = Maximum value - Minimum value.`,
+          solution: `Find the highest and lowest numbers in the list and subtract them.`
+        };
+      }
+    ],
     solving: (rng, diff) => {
       const n = randInt(rng, 6, 12), k = randInt(rng, 1, 5);
       return {
@@ -512,20 +771,40 @@ const Branches = {
 };
 
 /* ========= Mixed branch ========= */
+// --- MODIFIED to handle arrays of templates ---
 function generateMixed(rng, diff, style) {
   const keys = Object.keys(Branches).filter(k => k !== "mixed");
   const k = choice(rng, keys);
-  return Branches[k][style](rng, diff);
+  
+  let templateSource = Branches[k][style]; // e.g., Branches.arithmetic.word
+  if (Array.isArray(templateSource)) {
+    // If it's an array (like 'word'), pick one at random
+    return choice(rng, templateSource)(rng, diff);
+  } else {
+    // If it's a single function (like 'normal'), just call it
+    return templateSource(rng, diff);
+  }
 }
 
 /* ========= Main generator ========= */
+// --- MODIFIED to handle arrays of templates ---
 function genProblem({difficulty, branch, style, seedStr}) {
   const diff = DIFFS[difficulty] || DIFFS.medium;
   const rng = makeRng(seedStr);
 
   let payload;
-  if (branch === "mixed") payload = generateMixed(rng, diff, style);
-  else payload = Branches[branch][style](rng, diff);
+  if (branch === "mixed") {
+    payload = generateMixed(rng, diff, style);
+  } else {
+    let templateSource = Branches[branch][style];
+    if (Array.isArray(templateSource)) {
+      // It's an array of templates (e.g., 'word')
+      payload = choice(rng, templateSource)(rng, diff);
+    } else {
+      // It's a single template (e.g., 'normal', 'solving')
+      payload = templateSource(rng, diff);
+    }
+  }
 
   // Add occasional multi-step twist for higher difficulties
   if (diff.steps >= 3 && style !== "word problem") {
@@ -578,7 +857,7 @@ function getSeedFromURL() {
 }
 
 function render() {
-  const difficulty = difficultyEl.value;
+  const difficulty = difficultyEl.value; // This will be "easy", "medium", etc.
   const branch = branchEl.value;
   const styleMap = {
     "normal": "normal",
@@ -590,24 +869,21 @@ function render() {
   let seedStr = seedEl.value.trim();
 
   // --- MODIFIED SEED LOGIC ---
-  // If the user hasn't just typed in the seed box,
-  // OR if the seed box is empty, generate a new random seed.
-  // This makes the "Generate" button always create a new problem.
   if (!userHasInteractedWithSeed || !seedStr) {
     seedStr = randomSeed();
   }
-  // If user *has* interacted and the box has text, we'll use their seed.
   // --- END MODIFIED LOGIC ---
 
   const payload = genProblem({difficulty, branch, style, seedStr});
 
   problemTextEl.textContent = payload.text;
   hintEl.textContent = "Hint: " + payload.hint;
-  solutionEl.textContent = "Solution sketch: " + payload.solution; // Fixed typo from original
+  solutionEl.textContent = "Solution sketch: " + payload.solution;
 
   metaEl.innerHTML = "";
   const metaPieces = [
-    { label: "Difficulty", value: difficulty },
+    // Get the *text* of the selected option for display
+    { label: "Difficulty", value: difficultyEl.options[difficultyEl.selectedIndex].text },
     { label: "Branch", value: branch },
     { label: "Style", value: styleEl.value },
     { label: "Seed", value: seedStr }
@@ -641,7 +917,6 @@ copyBtn.addEventListener("click", async () => {
 
 shareBtn.addEventListener("click", async () => {
   const url = new URL(location.href);
-  // Use the seed that is currently in the box
   const seedVal = seedEl.value.trim() || randomSeed(); 
   url.searchParams.set("seed", seedVal);
   try {
@@ -659,9 +934,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const urlSeed = getSeedFromURL();
   if (urlSeed) {
     seedEl.value = urlSeed;
-    // Pretend the user typed it so the first render uses this seed
     userHasInteractedWithSeed = true; 
   }
+  
+  const params = new URLSearchParams(location.search);
+  const urlDifficulty = params.get("difficulty");
+  if (urlDifficulty && DIFFS.hasOwnProperty(urlDifficulty)) {
+      difficultyEl.value = urlDifficulty;
+  }
+  
   render();
 });
 </script>
