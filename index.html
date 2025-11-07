@@ -187,23 +187,6 @@ function formatAnswer(ans) {
   return ans.toFixed(2);
 }
 
-/* ========= KaTeX Auto-Render Setup ========= */
-document.addEventListener("DOMContentLoaded", function() {
-    window.katexOptions = {
-        delimiters: [
-            {left: '$$', right: '$$', display: true},  // Centered display math
-            {left: '$', right: '$', display: false}     // Inline math
-        ],
-        throwOnError: false
-    };
-    window.renderMath = function() {
-        if (window.renderMathInElement) {
-            renderMathInElement(problemBox, window.katexOptions);
-        }
-    }
-});
-
-
 /* ========= UI wiring ========= */
 const difficultyEl = document.getElementById("difficulty");
 const branchEl = document.getElementById("branch");
@@ -327,9 +310,18 @@ function render() {
   seedEl.value = seedStr;
   userHasInteractedWithSeed = false;
   
-  if (window.renderMath) {
-      window.renderMath();
+  // --- THIS IS THE FIX ---
+  // Call KaTeX renderer MANUALLY and define options here
+  if (window.renderMathInElement) {
+      renderMathInElement(problemBox, { // Render the whole box
+          delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+      });
   }
+  // --- END FIX ---
 }
 
 generateBtn.addEventListener("click", render);
@@ -371,9 +363,19 @@ toggleHintBtn.addEventListener("click", () => {
 toggleSolutionBtn.addEventListener("click", () => {
     solutionEl.classList.toggle("hidden");
     toggleSolutionBtn.textContent = solutionEl.classList.contains("hidden") ? "Show Solution" : "Hide Solution";
-    if (!solutionEl.classList.contains("hidden") && window.renderMath) {
-        window.renderMath();
+    
+    // --- THIS IS THE FIX ---
+    // Re-run renderer just for the solution box if it's being shown
+    if (!solutionEl.classList.contains("hidden") && window.renderMathInElement) {
+        renderMathInElement(solutionEl, { // Just render the solution element
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+        });
     }
+    // --- END FIX ---
 });
 
 checkAnswerBtn.addEventListener("click", () => {
@@ -513,11 +515,9 @@ const Branches = {
       const op = choice(rng, ["+", "-"]);
       const answer = (op === "+") ? (a / b) + c : (a / b) - c;
       return {
-        // --- THIS IS THE FIX ---
-        // Was: $(${a} \\div ${b}) ${op} ${c}$
-        // Now: $$(${a} \\div ${b}) ${op} ${c}$$
+        // This was the template causing the error in your screenshot.
+        // It is now fixed to use one `$$` block.
         text: `Compute: $$(${a} \\div ${b}) ${op} ${c}$$`,
-        // --- END FIX ---
         hint: `Evaluate the division inside the parentheses first, then do the addition or subtraction.`,
         solution: `$$(${a} \\div ${b}) ${op} ${c} = ${q} ${op} ${c} = ${answer}$$`,
         answer: answer
