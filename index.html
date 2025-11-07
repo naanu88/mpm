@@ -378,7 +378,6 @@ toggleSolutionBtn.addEventListener("click", () => {
 
 checkAnswerBtn.addEventListener("click", () => {
     const userAnswerText = userAnswerInput.value.trim();
-    // Allow for "pi" as an answer
     let userAnswer;
     if (userAnswerText.toLowerCase() === 'pi') {
         userAnswer = Math.PI;
@@ -388,7 +387,6 @@ checkAnswerBtn.addEventListener("click", () => {
     
     answerResultEl.classList.remove("hidden");
 
-    // Epsilon comparison for floating point numbers
     if (Math.abs(userAnswer - currentProblemAnswer) < 0.001) {
         answerResultEl.textContent = "Correct!";
         answerResultEl.className = "correct";
@@ -414,7 +412,6 @@ window.addEventListener("DOMContentLoaded", () => {
   updateBranchOptions(); 
 
   if (urlBranch) {
-      // Check if this branch is valid for the loaded difficulty
       const validBranches = Array.from(branchEl.options).map(opt => opt.value);
       if (validBranches.includes(urlBranch)) {
           branchEl.value = urlBranch;
@@ -437,7 +434,6 @@ function genProblem({difficulty, branch, style, seedStr, availableBranches}) {
 
   let payload;
   
-  // Fallback if branch isn't available (e.g., URL param mismatch)
   if (!availableBranches[branch]) {
       branch = "arithmetic"; 
   }
@@ -453,7 +449,6 @@ function genProblem({difficulty, branch, style, seedStr, availableBranches}) {
     }
   }
 
-  // Add occasional multi-step twist for higher difficulties
   if (diff.steps >= 3 && style !== "word problem") {
     if (rng() < 0.5 && payload.answer) { 
       const x = randInt(rng, 2, 9);
@@ -518,7 +513,11 @@ const Branches = {
       const op = choice(rng, ["+", "-"]);
       const answer = (op === "+") ? (a / b) + c : (a / b) - c;
       return {
-        text: `Compute: $(${a} \\div ${b}) ${op} ${c}$`,
+        // --- THIS IS THE FIX ---
+        // Was: $(${a} \\div ${b}) ${op} ${c}$
+        // Now: $$(${a} \\div ${b}) ${op} ${c}$$
+        text: `Compute: $$(${a} \\div ${b}) ${op} ${c}$$`,
+        // --- END FIX ---
         hint: `Evaluate the division inside the parentheses first, then do the addition or subtraction.`,
         solution: `$$(${a} \\div ${b}) ${op} ${c} = ${q} ${op} ${c} = ${answer}$$`,
         answer: answer
@@ -545,10 +544,8 @@ const Branches = {
         const p2 = randInt(rng, 1, diff.range + 5);
         const answer = (n1 * p1) + (n2 * p2);
         return {
-          // FIXED: Escaped dollar signs \$
           text: `${choice(rng,names)} is at the ${ctx.place} and buys $${n1}$ ${ctx.items} at \$${p1} each and $${n2}$ other ${ctx.items} at \$${p2} each. What is the total cost?`,
           hint: `Total cost = (quantity 1 $\\times$ price 1) + (quantity 2 $\\times$ price 2).`,
-          // FIXED: Escaped dollar signs \$
           solution: `Total = $(${n1} \\times ${p1}) + (${n2} \\times ${p2}) = ${n1*p1} + ${n2*p2} = \$${answer}$`,
           answer: answer
         };
@@ -563,7 +560,7 @@ const Branches = {
         text: `Find two numbers whose sum is $${sum}$ and product is $${product}$.`,
         hint: `Think about the factors of $${product}$. Which pair of factors adds up to $${sum}$?`,
         solution: `The factor pairs of $${product}$ include $(1, ${product})$, $(${a}, ${b})$, etc. We check their sums. $${a} + ${b} = ${sum}$. The two numbers are $${a}$ and $${b}$.`,
-        answer: a // Note: user could answer a or b. Answer check will only validate 'a'.
+        answer: a
       };
     }
   },
@@ -576,7 +573,6 @@ const Branches = {
       const r = r_sub_q + q;
       const answer = (r - q) / p;
       return {
-        // FIXED: Made this a display block
         text: `Solve for $x$: $$${p}x + ${q} = ${r}$$`,
         hint: `Isolate $x$. First subtract $${q}$ from both sides, then divide by $${p}$.`,
         solution: `$$${p}x + ${q} = ${r}$$ $$${p}x = ${r} - ${q}$$ $$${p}x = ${r-q}$$ $$x = \\frac{${r-q}}{${p}}$$ $$x = ${answer}$$`,
@@ -620,7 +616,7 @@ const Branches = {
         const t = x * p;
         const answer = p;
         return {
-          text: `${name} buys $${x}$ ${ctx.items} at the ${ctx.place}. The total cost was \$${t}. If each item costs '$p'$, solve for '$p'$.`,
+          text: `${name} buys $${x}$ ${ctx.items} at the ${ctx.place}. The total cost was \$${t}. If each item costs $p$, solve for $p$.`,
           hint: `Total cost = quantity $\\times$ price. So, $${t} = ${x} \\times p$.`,
           solution: `$$${t} = ${x}p$$ $$p = \\frac{${t}}{${x}}$$ $$p = ${answer}$$`,
           answer: answer
@@ -942,7 +938,7 @@ const Branches = {
           const p = randInt(rng, 1, 3);
           const answer = k - p;
           return {
-              text: `Solve for $x$: $${a}^x \\times ${a}^${p} = ${a}^${k}$`,
+              text: `Solve for $x$: $$${a}^x \\times ${a}^${p} = ${a}^${k}$$`,
               hint: `First combine the terms on the left: $a^{x+p} = a^k$. If bases are equal, exponents are equal.`,
               solution: `$$${a}^{x+${p}} = ${a}^${k}$$ $$x + ${p} = ${k}$$ $$x = ${k} - ${p} = ${answer}$$`,
               answer: answer
@@ -958,10 +954,10 @@ const Branches = {
           const rhs = p * randInt(rng, 2, 10);
           const answer = rhs / p;
           return {
-              text: `Solve for $x$: $${p}x + ${q} > ${q + rhs}$`,
+              text: `Solve for $x$: $$${p}x + ${q} > ${q + rhs}$$ (Find the bound)`,
               hint: `Isolate $x$ just like in an equation. Subtract $${q}$, then divide by $${p}$.`,
               solution: `$$${p}x + ${q} > ${q + rhs}$$ $$${p}x > ${q + rhs} - ${q}$$ $$${p}x > ${rhs}$$ $$x > \\frac{${rhs}}{${p}}$$ $$x > ${answer}$$`,
-              answer: answer // Answer check will be tricky. Maybe ask "What is the bound?"
+              answer: answer
           };
       },
       word: [
@@ -985,7 +981,7 @@ const Branches = {
           const rhs = a * randInt(rng, 2, 5);
           const answer = (rhs / a) + b;
           return {
-              text: `Solve for $x$: $${a}(x - ${b}) \\ge ${rhs}$. (Find the bound)`,
+              text: `Solve for $x$: $$${a}(x - ${b}) \\ge ${rhs}$$ (Find the bound)`,
               hint: `Divide by $${a}$. Remember to **flip the inequality sign** when you divide by a negative number!`,
               solution: `$$${a}(x - ${b}) \\ge ${rhs}$$ $$x - ${b} \\le \\frac{${rhs}}{${a}}$$  (sign flips!)
                          $$x - ${b} \\le ${rhs/a}$$ $$x \\le ${rhs/a} + ${b}$$ $$x \\le ${answer}$$`,
